@@ -17,8 +17,9 @@ def get_db_connection():
 @app.route('/update', methods=['POST'])
 def update_status():
     data = request.json
-    light = data['light']
-    fan = data['fan']
+
+    light = data['light_status']   # ON / OFF
+    fan = data['fan_status']       # ON / OFF
     temperature = data['temperature']
 
     conn = get_db_connection()
@@ -35,7 +36,7 @@ def update_status():
     cursor.close()
     conn.close()
 
-    return jsonify({"message": "Status updated successfully"})
+    return jsonify({"message": "Smart home status updated successfully"})
 
 # ---------- DISPLAY CURRENT STATUS ----------
 @app.route('/status', methods=['GET'])
@@ -43,18 +44,24 @@ def get_status():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("""
-        SELECT light_status, fan_status, temperature, timestamp
-        FROM home_status
-        ORDER BY id DESC LIMIT 1
-    """)
+    query = """
+    SELECT light_status, fan_status, temperature
+    FROM home_status
+    ORDER BY timestamp DESC
+    LIMIT 1
+    """
+    cursor.execute(query)
     status = cursor.fetchone()
 
     cursor.close()
     conn.close()
 
     if status:
-        return jsonify(status)
+        return jsonify({
+            "Light": status["light_status"],
+            "Fan": status["fan_status"],
+            "Temperature": status["temperature"]
+        })
     else:
         return jsonify({"message": "No data available"})
 
